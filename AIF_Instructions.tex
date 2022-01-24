@@ -1,0 +1,253 @@
+% This is the Working Version (master branch)
+\pdfminorversion=4
+
+\documentclass[preprint,pre,showkeys,12pt,superscriptaddress,nofootinbib,endfloats*]{revtex4-1}
+% \documentclass[superscriptaddress,twocolumn,10pt]{revtex4-1}
+
+% Standard Packages
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}   % use for hypertext links, including those to external documents and URLs
+\usepackage{epstopdf}
+\usepackage{xspace}
+\usepackage{grffile}
+\usepackage{xr}
+\usepackage{xcolor}
+\usepackage{upquote} % to get 'straight' quotes in verbatim
+
+%Other packages I use occasionally
+\usepackage{verbatim}   % useful for program listings
+%\usepackage{color}      % use if color is used in text
+%\usepackage{subfigure}  % use for side-by-side figures
+%\usepackage{amsthm}
+
+\raggedbottom           % don't add extra vertical space
+
+% Macros for editing/commenting
+\newcommand{\revision}[1]{\textbf{#1}}
+\newcommand{\previous}[1]{\textit{#1}}
+\newcommand{\AArm}{\ensuremath{\textrm{\AA}}\xspace}
+\newcommand{\CMT}[2]{\textcolor{red}{\textbf{\textit{#1: #2}}}}
+\newcommand{\REFs}[1]{\noindent\textbf{[INS. REFs #1]}}
+
+% External document(s) for referencing
+%\externaldocument[SI-]{SI_Qst_single}
+
+% Path for Graphics
+\graphicspath{{Figures/}}
+
+\begin{document}
+
+\title{Minimal AIF Instructions
+  %\footnote{Official contribution of the National Institute of Standards and Technology; not subject to copyright in the United States.}
+} 
+
+\author{Daniel W.~Siderius}\email[Corresponding author, email: ]{daniel.siderius@nist.gov}
+\affiliation{Chemical Sciences Division, National Institute of Standards and Technology, Gaithersburg, MD 20899, USA}
+
+
+\date{\today}
+%\date{Received: XX / Accepted: XX / Published Online: XX}
+
+%% \begin{abstract}
+%%   Abstract here
+%% \end{abstract}
+
+\maketitle
+
+\newpage
+\section*{Disclaimer}
+
+Certain commercially available items are identified in this document. This identification does not imply recommendation by the National Institute of Standards and Technology, nor does it imply that it is the best available for the purposes described.
+
+\section{Introduction}\label{sec:intro}
+
+The purpose of this document is to provide a guide for formatting equilibrium adsorption data (e.g., an adsorption isotherm) in the ``adsorption information format'' (AIF) for inclusion as supplementary information in a special issue of J Chem Eng Data. Please note that the specifications here are not the final form of the AIF. Standardization of the AIF is a current project under the supervision of IUPAC. The original design of the AIF is to facilitate comparison of isotherm data from various instruments, but the broader purpose of AIF is standardize presentation of adsorption isotherms to avoid ambiguity in the presentation of adsorption isotherm data.
+
+This document assumes understanding of basic adsorption concepts and terminology; field-specific jargon is used without definition. If there are questions regarding the instructions that follow, please contact Daniel Siderius \url{mailto:daniel.siderius@nist.gov}.
+
+\section{Helpful References}
+
+The AIF was introduced by J.~D.~Evans, et al., in 2021~\cite{doi:10.1021/acs.langmuir.1c00122} to create a ``universal'' format for encoding adsorption isotherms, hence facilitating comparison of isotherms as measured by different adsorption instruments. As a broader project, the AIF aims to create a universal standard for presenting adsorption isotherms to facilitate collection of isotherms, curation of databases, and application of machine-learning approaches to isotherm data. Current information about the AIF and its ongoing development is available at \url{https://adsorptioninformationformat.com/}.
+
+Additionally, software related to AIF is stored in a GitHub repository at \url{https://github.com/AIF-development-team/adsorptioninformationformat}. This repository includes a utility that can convert isotherm files from Micromeritics, Quantachrome, and BEL instruments to AIF.
+
+Lastly, development of AIF has been accepted as an IUPAC Project. Details are available at \url{https://iupac.org/project/2021-016-1-024}.
+
+
+\section{Description of AIF}
+
+AIF is a key-value dictionary that is encoded in the STAR file format\cite{doi:10.1021/ci00002a020}. Keys in an AIF dictionary are given by human-readable strings that begin with an underline (``\_'') sentinel and cannot contain spaces. Values are associated with a key and may exist as string, float, integer, or DATE/DATETIME variable types.
+
+The easiest way to understand the AIF is to examine a sample isotherm encoded in AIF. In Append \ref{appendix:A}, a sample AIF file is shown as pure text. This particular AIF-formatted file contains an adsorption-desorption isotherm of Nitrogen in the DUT-6 metal-organic framework, at 77.3~K. It was originally measured in a Quantachrome Autosorb instrument; the original text output from the instrument is is the AIF GitHub repository at \href{https://raw.githubusercontent.com/AIF-development-team/adsorptioninformationformat/master/test/database/DUT-6/NK_DUT-6_LP_N2_114PKT\%20(Raw\%20Analysis\%20Data).txt}{\texttt{test/database/DUT-6/NK\_DUT-6\_LP\_N2\_114PKT (Raw Analysis Data).txt}}
+
+As can be seen in Appendix~\ref{appendix:A} AIF is composed of up to four parts:
+
+\begin{enumerate}
+\item AIF Dictionary Name (see Sec.~\ref{ssec:name})
+\item AIF Metadata Header (see Sec.~\ref{ssec:metadata})
+\item Adsorption Loop (see Sec.~\ref{ssec:loops})
+\item Desorption Loop [optional] (see Sec.~\ref{ssec:loops})
+\end{enumerate}
+
+The dictionary name, metadata header, and adsorption loop are mandatory. The desorption loop is only included if a desorption isotherm branch is measured. Authors may store both adsorption and desorption data in the adsorption loop if there is no hysteresis in the isotherm, although we note that doing so incurs a `loss of information' about the measurement sequence.
+
+We reiterate that keys in the AIF will change in its subsequent development. The present tutorial reflects the state of the AIF as of January 2022.
+
+\subsection{AIF Dictionary Name}\label{ssec:name}
+
+The first line of an AIF file is a name for the AIF dictionary. In Appendix~\ref{appendix:A}, the dictionary name is \verb!data_raw2aif!. It should begin with ``\verb!data_!'' and follow with a user-selected string. Examples: \verb!data_N2_CuBTC_77K!, \verb!data_TrCO2_ZSM5_GCMC!, etc. The dictionary name is not used in further processing the AIF, so there is great freedom in the name choice.
+
+\subsection{AIF Metadata header}\label{ssec:metadata}
+
+The second section of an AIF file is the metadata header, which includes required metadata key-value pairs and may include optional metadata key-value pairs. The mandatory metadata keys are given in Table~\ref{tab:meta_req} and are essential metadata for identifying an isotherm: identifiers for the adsorptive (adsorbate): \verb!_exptl_adsorptive!, the adsorbent material: \verb!_sample_id!, the isotherm temperature: \verb!_exptl_temperature!, and units of the temperature, pressure, and loading. The table also gives data specifications for those keys along with example values. The key-value pairs in Table~\ref{tab:meta_req} {\bf must be included using the key names exactly as shown}. Without this essential information, an isotherm is incomplete.
+
+When possible, it is preferable to use existing systematic descriptors for identifying units, adsorptives, and (if possible) materials. An adsorptive can usually be identified by its InChIKey (e.g., Nitrogen is \verb!IJGRMHOSHXDMSA-UHFFFAOYSA-N!, \url{https://webbook.nist.gov/cgi/cbook.cgi?Name=nitrogen&Units=SI}). Units may be identified using the QUDT framework, \url{https://qudt.org/}. (E.g., mmol/g or ``millimoles adsorptive per gram adsorbent'' may be represented in QUDT as \verb!MilliMOL-PER-GM!; kPa or ``Kilopascals'' would be represented as \verb!KiloPa!.) An (incomplete) list of QUDT units for adsorption is available in the included \verb!QUDT_Units.xlsx! spreadsheet. Using systems like InChIKey or QUDT is not mandatory for isotherms included in the special issue of JCED.
+
+\begin{table}%[h!]
+  \begin{center}
+    \label{tab:meta_req}
+    \begin{tabular}{l|l|l|l}
+      \textbf{Key} & \textbf{Description} & \textbf{Data Type} & \textbf{Example}\\
+      \hline
+      \_exptl\_adsorptive & Adsorptive Identifier & String & IJGRMHOSHXDMSA-UHFFFAOYSA-N \\
+      \_exptl\_temperature & Temperature of Isotherm & Float & 293.2 \\
+      \_sample\_material\_id & Adsorbent Identifier & String & DUT-6 \\
+      \_units\_temperature & Units of Temperature & String & K \\
+      \_units\_pressure & Units of Pressure & String & Bar \\
+      \_units\_loading & Units of Adsorbate Loading & String & MilliMOL\_PER\_GM \\
+    \end{tabular}
+    \caption{Mandatory Metadata in AIF Header.}
+  \end{center}
+\end{table}
+
+The metadata header of an AIF file may contain other information deemed relevant by the author. The example AIF in Appendix~ref{appendix:A} includes the \verb!_exptl_operator!, \verb!_exptl_date!, \verb!_instrument!, \verb!_exptl_sample_mass!, and \verb!_sample_id! keys. It is up to the author to decide which optional keys to include in an AIF file; the intention behind these keys is to provide useful or relevant metadata about the isotherm that aids interpretation and reproducibility. For example, an AIF file containing and adsorption isotherm from molecular simulation could include keys that describe the simulation method or force field, e.g.:\newline
+
+\noindent\verb!_simulation_method 'Grand Canonical Monte Carlo'!\\
+\verb!_force_field_adsorptive 'TraPPE UA'!\\
+\verb!_force_field_adsorbent 'UFF with QEq point charges'!\\
+\verb!_force_field_mixingrule 'Lorentz-Berthelot'!\\
+
+\noindent An AIF file for experimental measurements could include information regarding adsorbent activation, equilibration time, measurement type, the physical properties set (e.g., a particular equation of state), etc.:\newline
+
+\noindent\verb!_activation 'Vacuum at 300K for 2 hours'!\\
+\verb!_measurement_type 'Manometric'!\\
+\verb!_equation_of_state 'from CoolProp'!\\
+
+\noindent Since the author has freedom in selecting the optional metadata keys, we only require that 1) the keys follow the STAR naming scheme (leading ``\_'', no spaces) and 2) be interpretable based on information supplied in the associated manuscript or supplementary information. It is also important to consider whether including an optional key may in turn require and additional metadata key; for example, including \verb!_exptl_sample_mass! (the mass of the adsorbent sample) would in turn require a key that clarifies the units of that quantity (e.g., \verb!_units_mass!).
+
+\begin{table}%[h!]
+  \begin{center}
+    \label{tab:meta_opt}
+    \begin{tabular}{l|l|l|l}
+      \textbf{Key} & \textbf{Description} & \textbf{Data Type} & \textbf{Example}\\
+      \hline
+      \_exptl\_operator & Name of Operator & String & 'Daniel Siderius' \\
+      \_exptl\_date & Date of Measurement & See note & 2009-09-17T19:56:00 \\
+      \_exptl\_instrument & Model of Instrument & String & 'Self-built Seiverts Apparatus' \\
+      \_exptl\_sample\_mass & Mass of Adsorbent Sample & Float & 0.0339 \\
+      \_sample\_id & Sample Identifier & String & 'nk\_DUT-6\_LP\_N2\_114pkt'
+    \end{tabular}
+    \caption{Optional Metadata in AIF Header. \\
+      Note: The date (and time) of the measurement is best represented by a DATETIME data type, but a simpler type such as the date by itself (e.g., 2022-01-19) is sufficient. We do strongly recommend that dates use the YYYY-MM-DD format as this simplifies sorting and has wider international usage than alternatives.
+      }
+  \end{center}
+\end{table}
+
+\subsection{Adsorption and Desorption Loops}\label{ssec:loops}
+
+The final section(s) of an AIF file are the actual pressure-adsorption data, represented in a group of columns. In STAR terminology, these are termed 'loops.' An AIF file may contain one or two loops, one for {\bf ad}sorption measurements and one for {\bf de}sorption measurements. The adsorption loop is mandatory, while the desorption loop should be included if a desorption isotherm is measured. The inclusion of both adsorption and desorption loops does not automatically mean that the isotherm exhibits adsorption-desorption hysteresis; it only means that measurements were done for adsorption (increasing pressure) and desorption (decreasing pressure) directions. However, if hysteresis is present, an author should use the adsorption and desorption loops to prevent confusion.
+
+Each loop for AIF files submitted to JCED must contain at least three columns of data: measurements of pressure, adsorption, and uncertainty in the adsorption measurement. Additional columns could contain the saturation pressure of the adsorptive at the isotherm temperature or uncertainty in the pressure measurement. The saturation pressure of the adsorptive, $p_0$, should be included if the measurement is at subcritical conditions.
+
+Each loop is preceded by a text block that identifies the loop columns, e.g.,
+
+\begin{verbatim}
+loop_
+_adsorp_pressure
+_adsorp_amount
+_adsorp_amount_uncertainty
+\end{verbatim}
+
+\noindent This block indicates that the loop contains three columns (pressure, adsorbed amount, and uncertainty in the adsorbed amount) and that the data is an adsorption loop (\verb!_adsorb! prefix on the column names). The \verb!loop_! line is absolutely necessary, and then the following lines must use the exact column names shown. If an author includes uncertainty in pressure, that would be indicated by the \verb!_adsorp_pressure_uncertainty! line; similarly, saturation pressure would be identified by \verb!_adsorp_p0!. The ordering of the column names following \verb!loop_! must match the ordering of the data columns (see below). The units of the measurements given in the data loops are given in the metadata header. The desorption data loop would be preceded by
+
+\begin{verbatim}
+loop_
+_desorp_pressure
+_desorp_amount
+_desorp_amount_uncertainty
+\end{verbatim}
+
+\noindent where the column names have the \verb!_desorp! prefix.
+
+After the text block that identifies the contents of the adsorption or desorption data loop, the data are given in space-separated columns in the same order as the preceding text block. Tabs should not be used to delimit the columns, as standard packages for interpreting STAR formatted files may fail to parse the columns.
+
+It is easiest to think of these data in a table or spreadsheet, e.g., the following table:\\
+
+\begin{tabular}{|c|c|c|c|}
+  \hline
+  \textbf{Pressure (bar)} & \textbf{$p_0$ (bar)} & \textbf{Amount Adsorbed (mmol/g)} & \textbf{Uncertainty (mmol/g)}\\
+  \hline
+  0.0001 & 0.0608 & 0.3400 & 0.0074\\ \hline
+  0.0049 & 0.0608 & 0.6022 & 0.0037\\ \hline
+  0.0108 & 0.0608 & 0.8470 & 0.0062\\ \hline
+  0.0181 & 0.0608 & 1.1079 & 0.0074\\ \hline
+  0.0203 & 0.0608 & 1.1820 & 0.0037\\ \hline
+\end{tabular}\\
+
+\noindent This table of isotherm data would be represented in an AIF file as
+
+\begin{verbatim}
+loop_
+_adsorp_pressure
+_adsorp_p0
+_adsorp_amount
+_adsorp_amount_uncertainty
+0.0001  0.0608  0.3400  0.0074
+0.0049  0.0608  0.6022  0.0037
+0.0108  0.0608  0.8470  0.0062
+0.0181  0.0608  1.1079  0.0074
+0.0203  0.0608  1.1820  0.0037
+\end{verbatim}
+
+Note regarding uncertainty: the meaning the uncertainty given in the adsorption and/or desorption loops should be clarified in the associated manuscript.
+
+This completes the description of the contents of an AIF file. The most important items to keep in mind while composing an AIF file are 1) ensuring that the metadata header contains all required information and appropriate optional information and 2) that the loop columns match the order specified in the lines following the ``\verb!loop_!'' sentinel.
+
+\section{Examples}
+
+Several example AIF files are included with this guide:
+
+\noindent \verb!NK_DUT-6_LP_N2_114PKT.aif!:  The AIF file included in this guide in Appendix~\ref{appendix:A}.\\
+
+\noindent \verb!CH4_RM8850_Exp.aif!: Isotherm of methane adsorbed in Zeolite Y measured using a manometric instrument. The isotherm contains only an adsorption branch of the isotherm.\\
+
+\noindent \verb!CO2_ZIF8_GCMC.aif!: Isotherm of CO2 adsorbed in ZIF-8 as measured using Grand Canonical Transition Matrix Monte Carlo simulation. It includes metadata that identify the simulation force fields, the simulation code, and the simulation cell size of the material.\\
+
+\noindent \verb!Xe_Vycor_Exp.aif!: Isotherm of Xenon adsorbed in Vycor Glass measured manometrically. This example contains both adsorption and desorption branches, the saturation pressure of the adsorptive, and information about the sample mass.
+
+\section*{Acknowledgments}
+\noindent Jack Evans\\
+AIF Development Team
+
+
+
+%Single Appendix
+\newpage
+\appendix
+\section{Example AIF File}\label{appendix:A}
+
+\verbatiminput{Files/NK_DUT-6_LP_N2_114PKT.aif}
+
+\bibliography{aif_biblio}
+\bibliographystyle{apsrev}
+%\input{bib.bbl}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
